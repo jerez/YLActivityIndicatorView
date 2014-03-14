@@ -7,8 +7,14 @@
 //
 
 #import "YLActivityIndicatorView.h"
+#define kDotSpacing 3.0f
+#define kDotBorderWidth 1.0f
 
 @implementation YLActivityIndicatorView
+{
+    float _dotSide;
+    float _yOffset;
+}
 
 @synthesize hidesWhenStopped = _hidesWhenStopped;
 @synthesize dotCount = _dotCount;
@@ -17,9 +23,9 @@
 - (void)setDefaultProperty
 {
     _currentStep = 0;
-    _dotCount = 3;
+    _dotCount = 4;
     _isAnimating = NO;
-    _duration = .6f;
+    _duration = .8f;
     _hidesWhenStopped = YES;
 }
 
@@ -36,8 +42,7 @@
 
 - (id)init
 {
-    self = [self initWithFrame:CGRectMake(0, 0, 20, 10)];
-    
+    self = [self initWithFrame:CGRectMake(0, 0, 50, 15)];
     return self;
 }
 
@@ -47,12 +52,14 @@
     if (_isAnimating) {
         return;
     }
-    
+    _dotSide = MIN(self.frame.size.height-kDotBorderWidth*2, (self.frame.size.width/_dotCount) + ((_dotCount-1)*kDotSpacing) + ((_dotCount-1)*kDotBorderWidth*2));
+    _yOffset = ((self.frame.size.height -_dotSide)/2) ;
     _timer = [NSTimer scheduledTimerWithTimeInterval:_duration/(_dotCount*2+1)
                                               target:self
                                             selector:@selector(repeatAnimation)
                                             userInfo:nil
                                              repeats:YES];
+    
     [[NSRunLoop currentRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
     _isAnimating = YES;
     
@@ -85,23 +92,14 @@
 - (UIColor*)currentBorderColor:(NSInteger)index
 {
     if (_currentStep == index) {
-        return [UIColor colorWithRed:82.0f/255.0f
-                               green:111.0f/255.0f
-                                blue:167.0f/255.0f
-                               alpha:1];
+        return [UIColor grayColor];
     } else if (_currentStep < index) {
-        return [UIColor clearColor];
+        return [UIColor colorWithWhite: 0.80 alpha:1];
     } else {
         if (_currentStep - index == 1) {
-            return [UIColor colorWithRed:158.0f/255.0f
-                                   green:172.0f/255.0f
-                                    blue:203.0f/255.0f
-                                   alpha:1];
+            return [UIColor lightGrayColor];
         } else {
-            return [UIColor colorWithRed:239.0f/255.0f
-                                   green:242.0f/255.0f
-                                    blue:246.0f/255.0f
-                                   alpha:1];
+            return [UIColor colorWithWhite: 0.80 alpha:1];
         }
     }
 }
@@ -109,51 +107,26 @@
 - (UIColor*)currentInnerColor:(NSInteger)index
 {
     if (_currentStep == index) {
-        return [UIColor colorWithRed:140.0f/255.0f
-                               green:158.0f/255.0f
-                                blue:195.0f/255.0f
-                               alpha:1];
+        return [UIColor lightGrayColor];
     } else if (_currentStep < index) {
-        return [UIColor clearColor];
+        return [UIColor colorWithWhite: 0.90f alpha:1];
     } else {
         if (_currentStep - index == 1) {
-            return [UIColor colorWithRed:189.0f/255.0f
-                                   green:198.0f/255.0f
-                                    blue:219.0f/255.0f
-                                   alpha:1];
+            return [UIColor colorWithWhite: 0.80f alpha:1];
         } else {
-            return [UIColor colorWithRed:244.0f/255.0f
-                                   green:246.0f/255.0f
-                                    blue:249.0f/255.0f
-                                   alpha:1];
+            return [UIColor colorWithWhite: 0.90f alpha:1];
         }
     }
 }
 
 - (CGRect)currentRect:(NSInteger)index
 {
+    //float x = (index*(_dotSide));
+    float x = self.frame.size.width/(_dotCount*_dotSide+kDotSpacing);
     if (_currentStep == index) {
-        return CGRectMake(self.frame.size.width/(_dotCount*2+1),
-                          0,
-                          self.frame.size.width/(_dotCount*2+1),
-                          self.frame.size.height);
-    } else if (_currentStep < index) {
-        return CGRectMake(self.frame.size.width/(_dotCount*2+1),
-                          self.frame.size.height/5.0,
-                          self.frame.size.width/(_dotCount*2+1),
-                          self.frame.size.height*3.0/5.0);
-    } else {
-        if (_currentStep - index == 1) {
-            return CGRectMake(self.frame.size.width/(_dotCount*2+1),
-                              self.frame.size.height/10.0,
-                              self.frame.size.width/(_dotCount*2+1),
-                              self.frame.size.height*4.0/5.0);
-        } else {
-            return CGRectMake(self.frame.size.width/(_dotCount*2+1),
-                              self.frame.size.height/5.0,
-                              self.frame.size.width/(_dotCount*2+1),
-                              self.frame.size.height*3.0/5.0);
-        }
+        return CGRectMake(x,_yOffset, _dotSide,_dotSide);
+    }else{
+        return CGRectMake(x,_yOffset+1,_dotSide-2,_dotSide-2);
     }
 }
 
@@ -166,18 +139,18 @@
 - (void)drawRect:(CGRect)rect
 {
     CGContextRef context = UIGraphicsGetCurrentContext();
-
+    
     for (int i = 0; i < _dotCount; i++) {
         [[self currentInnerColor:i] setFill];
         [[self currentBorderColor:i] setStroke];
         
         CGMutablePathRef path = CGPathCreateMutable();
-        CGRect rect1 = [self currentRect:i];
-        CGPathAddRect(path, NULL, rect1);
+        CGRect rect = [self currentRect:i];
+        CGPathAddEllipseInRect(path, nil, rect);
         
         CGContextBeginPath(context);
         CGContextAddPath(context, path);
-        CGContextSetLineWidth(context, 1);
+        CGContextSetLineWidth(context, kDotBorderWidth);
         CGContextClosePath(context);
         CGContextDrawPath(context, kCGPathFillStroke);
         
